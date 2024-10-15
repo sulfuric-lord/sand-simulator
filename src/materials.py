@@ -1,38 +1,39 @@
-# material.py
-import pygame
-from config import grid, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE
+from materials_type import Powder, Liquid, Solid
+from config import grid, GRID_WIDTH, GRID_HEIGHT
+
 import random
 
-class Material:
-    def __init__(self, color):
-        self.color = color
 
-    def spawn(self, x, y):
-        """Создает материал в указанных координатах"""
-        if 0 <= x < GRID_WIDTH and 0 <= y < GRID_HEIGHT:
-            if grid[x][y] is None:  # Проверяем, что клетка пуста
-                grid[x][y] = self  # Сохраняем объект материала в сетке
+class Sand(Powder):
+    def __init__(self):
+        super().__init__((237, 201, 175), "Sand")
 
-    def draw(self, surface):
-        """Отображает материал на экране"""
-        for x in range(GRID_WIDTH):
-            for y in range(GRID_HEIGHT):
-                if isinstance(grid[x][y], Material):
-                    pygame.draw.rect(surface, grid[x][y].color, (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+class Salt(Powder):
+    def __init__(self):
+        super().__init__((240, 240, 255), "Salt")
 
-class Powder(Material):
     def update(self):
-        """Обновляет положение порошкообразного материала"""
         for x in range(GRID_WIDTH):
-            for y in range(GRID_HEIGHT - 1, -1, -1):  # Проходим сетку снизу вверх
+            for y in range(GRID_HEIGHT - 1, -1, -1):
                 if grid[x][y] is self:
-                    # Падаем вниз, если клетка под текущей пуста
-                    if y + 1 < GRID_HEIGHT and grid[x][y + 1] is None:
+                    if y + 1 < GRID_HEIGHT and (grid[x][y + 1] is None or isinstance(grid[x][y + 1], Liquid)):
                         grid[x][y + 1] = self
                         grid[x][y] = None
-                    # Если клетка под занята, пытаемся сместиться вбок
-                    elif y + 1 < GRID_HEIGHT:
-                        direction = random.choice([-1, 1])  # Рандомно выбираем направление
-                        if 0 <= x + direction < GRID_WIDTH and grid[x + direction][y + 1] is None:
-                            grid[x + direction][y + 1] = self
-                            grid[x][y] = None
+                    
+                    interact_direction = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    for i in interact_direction:
+                        new_x = x + i[0]
+                        new_y = y + i[1]
+                        if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT:
+                            if isinstance(grid[new_x][new_y], Water):
+                                if random.randint(0, 10) == 1:
+                                    grid[x][y] = None
+
+
+class Water(Liquid):
+    def __init__(self):
+        super().__init__((0, 0, 255), "Water")
+
+class Steel(Solid):
+    def __init__(self):
+        super().__init__((100, 100, 100), "Steel")
